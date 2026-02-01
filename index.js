@@ -62,7 +62,7 @@ async function handleEvent(event) {
         // 1. 設定 wttr.in 的網址 (lang=zh-tw 是中文，format 是格式)
         // format=%C (天氣狀況) %t (氣溫) %h (濕度) %w (風速)
         const encodedCity = encodeURIComponent(city);
-        const url = `https://wttr.in/${encodedCity}?format=%C+%t+濕度:%h+風速:%w&lang=zh-tw`;
+        const url = `https://wttr.in/${encodedCity}?format=%C+%t+濕度:%h+風速:%w&lang=zh-tw&m`;
         
         // 2. 機器人幫您去這個網址抓資料 (await 等待結果)
         const response = await axios.get(url);
