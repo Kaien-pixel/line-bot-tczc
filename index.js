@@ -1,6 +1,7 @@
 require('dotenv').config();
 const line = require('@line/bot-sdk');
 const express = require('express');
+const axios = require('axios'); // <--- 新增：引入上網抓資料的工具
 
 // 1. 設定 LINE Bot 的參數
 const config = {
@@ -23,32 +24,25 @@ app.post('/callback', line.middleware(config), (req, res) => {
     });
 });
 
-// 4. 處理訊息的邏輯 (機器人的大腦)
-function handleEvent(event) {
+// 4. 處理訊息的邏輯 (注意：這裡加了 async 變成非同步函式)
+async function handleEvent(event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
     return Promise.resolve(null);
   }
 
-  // 取得使用者文字並去空白
   const userText = event.message.text.trim();
   let replyText = '';
 
-  // === 🛡️ 步驟 A：守門員機制 (防吵鬧關鍵) ===
-  
-  // 定義「不用加 # 也能觸發」的白名單 (對應您的圖文選單按鈕)
+  // === 🛡️ 守門員機制 ===
   const menuKeywords = ['大會師', 'Zinger', '保固', '貼紙', '購買貼紙'];
-
-  // 檢查：除非是「#開頭」或是「選單關鍵字」，否則機器人直接無視 (return null)
-  // 這樣在群組聊天時，機器人才不會隨便插嘴
   if (!userText.startsWith('#') && !menuKeywords.some(key => userText.includes(key))) {
     return Promise.resolve(null);
   }
 
-  // === 🛡️ 步驟 B：統一格式 ===
-  // 如果是有 # 的指令，把 # 去掉，方便後面判斷 (例如 "#台中天氣" 變成 "台中天氣")
+  // 把 # 去掉
   const command = userText.startsWith('#') ? userText.substring(1).trim() : userText;
 
-  // === 關鍵字判斷區 (改用 command 來判斷) ===
+  // === 關鍵字判斷區 ===
   
   if (command.includes('大會師')) {
     replyText = '🚗 TCZC 全國大會師資訊：\n日期：2026年3月14日\n地點：台中中科大運河停車場\n期待您的參加！';
@@ -60,29 +54,43 @@ function handleEvent(event) {
     replyText = '想要購買車隊貼紙嗎？\n請直接私訊版主或管理員喔！';
     
   } else if (command.endsWith('天氣')) {
-    // 抓取地名 (把 "天氣" 兩個字去掉)
+    // === ☁️ 真實天氣查詢功能 (wttr.in) ===
     const city = command.replace('天氣', '').trim();
     
     if (city) {
-      // 模擬天氣回應
-      const weathers = ['晴天 ☀️', '陰天 ☁️', '有雨 🌧️', '適合跑山 🏎️'];
-      const randomWeather = weathers[Math.floor(Math.random() * weathers.length)];
-      replyText = `正在查詢【${city}】...\n報告！${city}目前：${randomWeather}`;
+      try {
+        // 1. 設定 wttr.in 的網址 (lang=zh-tw 是中文，format 是格式)
+        // format=%C (天氣狀況) %t (氣溫) %h (濕度) %w (風速)
+        const encodedCity = encodeURIComponent(city);
+        const url = `https://wttr.in/${encodedCity}?format=%C+%t+濕度:%h+風速:%w&lang=zh-tw`;
+        
+        // 2. 機器人幫您去這個網址抓資料 (await 等待結果)
+        const response = await axios.get(url);
+        const weatherData = response.data;
+
+        // 3. 檢查是不是抓失敗 (有時候打錯字會回傳 Unknown location)
+        if (weatherData.includes('Unknown') || weatherData.includes('404')) {
+          replyText = `找不到【${city}】這個地方耶😅\n請確認地名是否正確！(例如：台中、台北)`;
+        } else {
+          replyText = `🌤️ 【${city}】即時天氣報告：\n${weatherData}\n(資料來源: wttr.in)`;
+        }
+
+      } catch (error) {
+        console.error(error);
+        replyText = '查詢失敗，氣象衛星連線中斷...請稍後再試 🛰️';
+      }
     } else {
-      replyText = '想查天氣嗎？請輸入像是「#台中天氣」喔！(記得加 # 號)';
+      replyText = '想查天氣嗎？請輸入像是「#台中天氣」喔！';
     }
-    
-  } else {
-    // === 步驟 C：安靜模式 ===
-    // 雖然有 # 但指令看不懂 (例如 #亂打)，為了不洗版，這裡我們選擇「不回覆」
-    return Promise.resolve(null);
   }
 
   // 發送回覆
-  return client.replyMessage(event.replyToken, {
-    type: 'text',
-    text: replyText
-  });
+  if (replyText) {
+    return client.replyMessage(event.replyToken, {
+      type: 'text',
+      text: replyText
+    });
+  }
 }
 
 // 5. 啟動伺服器
