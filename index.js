@@ -35,15 +35,28 @@ function handleEvent(event) {
 
   // === 關鍵字判斷區 ===
   if (userText.includes('大會師')) {
-    replyText = '🚗 TCZC 全國大會師資訊：\n日期：2026年3月14日\n地點：台中欣向町森活園區\n期待您的參加！';
+    replyText = '🚗 TCZC 全國大會師資訊：\n日期：2026年3月14日\n地點：台中中科大運河停車場\n期待您的參加！';
   } else if (userText.includes('Zinger') || userText.includes('保固')) {
     replyText = '關於 Zinger 1.5T 保固：\n請參考中華汽車官網，或洽詢原廠技師。';
   } else if (userText.includes('貼紙')) {
     replyText = '想要購買車隊貼紙嗎？\n請直接私訊版主或管理員喔！';
+} else if (userText.endsWith('天氣')) {
+    // === 這是新加入的天氣車廂 ===
+    const city = userText.replace('天氣', '').trim();
+    if (city) {
+      // 模擬天氣回應
+      const weathers = ['晴天 ☀️', '陰天 ☁️', '有雨 🌧️', '適合跑山 🏎️'];
+      const randomWeather = weathers[Math.floor(Math.random() * weathers.length)];
+      replyText = `正在查詢【${city}】...\n報告！${city}目前：${randomWeather}`;
+    } else {
+      replyText = '想查天氣嗎？請輸入像是「台中天氣」喔！';
+    }
   } else {
     // 如果沒對應到，就重複他的話
     replyText = `收到！您剛剛說了：「${userText}」`;
   }
+  // ==========================
+
   // ===================
 
   return client.replyMessage(event.replyToken, {
