@@ -80,6 +80,25 @@ async function handleEvent(event) {
   
   } else {
     try {
+          try {
+      // ... (前面是 prompt 設定) ...
+
+      // 2. 呼叫 Gemini
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      
+      // ✨【新增這一段】讓後台印出真實版本
+      console.log("🔍 Google 回傳的真實模型版本:", response.modelVersion);
+      
+      replyText = response.text();
+      
+      // 💡【選用】如果您想讓機器人在 LINE 直接告訴您，可以把下面這行註解打開：
+      // replyText += `\n(核心版本: ${response.modelVersion})`;
+
+    } catch (error) {
+       // ... (錯誤處理) ...
+    }
+
       // === 🧠 AI 區域 ===
       const prompt = `
         你現在是「TCZC Zinger 車隊」的專屬 AI 助理，也是大家的車友。
