@@ -46,7 +46,13 @@ async function handleEvent(event) {
   }
 
   // 去掉 #
-  const command = userText.startsWith('#') ? userText.substring(1).trim() : userText;
+   // 1. 先把開頭的 # 去掉
+  let rawCommand = userText.startsWith('#') ? userText.substring(1).trim() : userText;
+
+  // 2. 【關鍵修改】幫文字洗澡：把所有標點符號和空白都刪掉
+  // 這裡的符號包含：空白, ?, !, ., ,, 以及它們的全形版本 (？ ！ 。 ，)
+  const command = rawCommand.replace(/[ ?！!。.,，\s]/g, '');
+
 
   // === 優先處理：固定的車隊指令 (硬規則) ===
   
