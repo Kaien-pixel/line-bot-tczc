@@ -13,7 +13,7 @@ const config = {
 // 設定 Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // 使用最新的 Gemini 模型
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash"});
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite"});
 
 const client = new line.Client(config);
 const app = express();
